@@ -1,29 +1,19 @@
 # Use the official Python 3.11.5 image from the Docker Hub
 FROM python:3.11.5-slim
 
-# Set environment variables to ensure Python runs in unbuffered and not interactive mode
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Set the working directory
 WORKDIR /app
 
-# Install dependencies
-# First, copy only the requirements file to leverage Docker cache
-COPY requirements.txt /app/
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
 
-# Install the dependencies
+# install system dependencies
+RUN apt-get update
+
+# install dependencies
 RUN pip install --upgrade pip
+COPY ./requirements.txt /app/
 RUN pip install -r requirements.txt
 
-# Copy the entire project
-COPY . /app/
+COPY . /app
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
-# Expose the port that the application will run on
-EXPOSE 8000
-
-# Run Gunicorn to serve the application
-CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "myproject.wsgi:application"]
+ENTRYPOINT [ "gunicorn", "core.wsgi", "-b", "0.0.0.0:8000"]
